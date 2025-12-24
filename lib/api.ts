@@ -1,85 +1,81 @@
-import { Drama, DramaDetail, Episode, Column, Category } from '@/types';
-
+// @ts-nocheck
 const BASE_URL = "https://dramabox.sansekai.my.id/api/dramabox";
 
-// Fungsi pembantu biar request lebih stabil
-async function fetchAPI(endpoint: string, params: Record<string, any> = {}) {
+// Fungsi pembantu Fetcher yang Kuat
+async function fetchAPI(endpoint, params = {}) {
   const url = new URL(`${BASE_URL}${endpoint}`);
-    Object.keys(params).forEach((key) => url.searchParams.append(key, params[key]));
+    Object.keys(params).forEach((key) => {
+        if (params[key]) url.searchParams.append(key, params[key]);
+          });
 
-      try {
-          const res = await fetch(url.toString(), { 
-                cache: 'no-store', 
-                      headers: {
-                              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                                      'Accept': 'application/json'
-                                            }
-                                                });
-                                                    if (!res.ok) throw new Error(`API Error: ${res.status}`);
-                                                        return await res.json();
-                                                          } catch (error) {
-                                                              console.error(`Gagal ambil data ${endpoint}:`, error);
-                                                                  return null;
-                                                                    }
-                                                                    }
+            try {
+                const res = await fetch(url.toString(), { 
+                      cache: 'no-store',
+                            headers: {
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                                            'Accept': 'application/json'
+                                                  }
+                                                      });
+                                                          if (!res.ok) return null;
+                                                              return await res.json();
+                                                                } catch (error) {
+                                                                    console.error(`API Error ${endpoint}:`, error);
+                                                                        return null;
+                                                                          }
+                                                                          }
 
-                                                                    // === 1. HOME (VIP) ===
-                                                                    export async function getHomeData(): Promise<Column[]> {
-                                                                      const data = await fetchAPI("/vip");
-                                                                        return data?.columnVoList || [];
-                                                                        }
+                                                                          // === 10 ENDPOINT LENGKAP ===
 
-                                                                        // === 2. TRENDING ===
-                                                                        export async function getTrending(): Promise<Drama[]> {
-                                                                          const data = await fetchAPI("/trending");
-                                                                            return Array.isArray(data) ? data : [];
-                                                                            }
+                                                                          export async function getHomeData() {
+                                                                            const data = await fetchAPI("/vip");
+                                                                              return data?.columnVoList || [];
+                                                                              }
 
-                                                                            // === 3. SEARCH (Pencarian) ===
-                                                                            export async function searchDrama(query: string): Promise<Drama[]> {
-                                                                              const data = await fetchAPI("/search", { keyword: query }); // Perbaikan parameter: keyword/query
-                                                                                return Array.isArray(data) ? data : [];
-                                                                                }
+                                                                              export async function getTrending() {
+                                                                                const data = await fetchAPI("/trending");
+                                                                                  return Array.isArray(data) ? data : [];
+                                                                                  }
 
-                                                                                // === 4. DETAIL DRAMA ===
-                                                                                export async function getDramaDetail(bookId: string): Promise<DramaDetail | null> {
-                                                                                  const data = await fetchAPI("/detail", { bookId });
-                                                                                    // Handle jika response dibungkus "data" atau langsung object
-                                                                                      return data?.data || data || null;
+                                                                                  export async function searchDrama(query) {
+                                                                                    const data = await fetchAPI("/search", { keyword: query });
+                                                                                      return Array.isArray(data) ? data : [];
                                                                                       }
 
-                                                                                      // === 5. SEMUA EPISODE ===
-                                                                                      export async function getAllEpisodes(bookId: string): Promise<Episode[]> {
-                                                                                        const data = await fetchAPI("/allepisode", { bookId });
-                                                                                          return Array.isArray(data) ? data : (data?.data || []);
-                                                                                          }
+                                                                                      export async function getDramaDetail(bookId) {
+                                                                                        const data = await fetchAPI("/detail", { bookId });
+                                                                                          // Handle response API yang kadang beda format
+                                                                                            return data?.data || data?.book ? { book: data.book || data.data.book } : null;
+                                                                                            }
 
-                                                                                          // === 6. KATEGORI (Genre) ===
-                                                                                          export async function getCategoryList(): Promise<Category[]> {
-                                                                                            const data = await fetchAPI("/category");
-                                                                                              return Array.isArray(data) ? data : [];
-                                                                                              }
-
-                                                                                              // === 7. FILTER BERDASARKAN TAG ===
-                                                                                              export async function getDramaByTag(tag: string): Promise<Drama[]> {
-                                                                                                const data = await fetchAPI("/tag", { tagName: tag });
-                                                                                                  return Array.isArray(data) ? data : [];
-                                                                                                  }
-
-                                                                                                  // === 8. SHORTS (Video Pendek ala TikTok) ===
-                                                                                                  export async function getShorts(): Promise<any[]> {
-                                                                                                    const data = await fetchAPI("/shorts");
-                                                                                                      return Array.isArray(data) ? data : [];
+                                                                                            export async function getAllEpisodes(bookId) {
+                                                                                              const data = await fetchAPI("/allepisode", { bookId });
+                                                                                                // Handle jika data langsung array atau dibungkus object
+                                                                                                  if (Array.isArray(data)) return data;
+                                                                                                    if (data?.data && Array.isArray(data.data)) return data.data;
+                                                                                                      return [];
                                                                                                       }
 
-                                                                                                      // === 9. PLAY URL (Jika butuh link streaming khusus) ===
-                                                                                                      export async function getVideoUrl(chapterId: string): Promise<string> {
-                                                                                                        const data = await fetchAPI("/play", { chapterId });
-                                                                                                          return data?.url || "";
+                                                                                                      export async function getCategoryList() {
+                                                                                                        const data = await fetchAPI("/category");
+                                                                                                          return Array.isArray(data) ? data : [];
                                                                                                           }
 
-                                                                                                          // === 10. CONFIG/LAINNYA ===
-                                                                                                          export async function getAppConfig() {
-                                                                                                            return await fetchAPI("/config");
-                                                                                                            }
-                                                                                                            
+                                                                                                          export async function getDramaByTag(tagName) {
+                                                                                                            const data = await fetchAPI("/tag", { tagName });
+                                                                                                              return Array.isArray(data) ? data : [];
+                                                                                                              }
+
+                                                                                                              export async function getShorts() {
+                                                                                                                const data = await fetchAPI("/shorts");
+                                                                                                                  return Array.isArray(data) ? data : [];
+                                                                                                                  }
+
+                                                                                                                  export async function getPlayUrl(chapterId) {
+                                                                                                                    const data = await fetchAPI("/play", { chapterId });
+                                                                                                                      return data?.url || "";
+                                                                                                                      }
+
+                                                                                                                      export async function getAppConfig() {
+                                                                                                                        return await fetchAPI("/config");
+                                                                                                                        }
+                                                                                                                        
