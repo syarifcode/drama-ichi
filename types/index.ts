@@ -14,7 +14,7 @@ export interface Drama {
                             };
                             }
 
-                            // INI YANG TADI HILANG (MAAFKAN SAYA)
+                            // KITA DEFINISIKAN COLUMN DISINI SUPAYA FILE LAIN BISA BACA
                             export interface Column {
                               columnId: number;
                                 title: string;
