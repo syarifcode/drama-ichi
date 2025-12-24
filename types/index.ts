@@ -45,6 +45,6 @@ export interface Drama {
                                                                           introduction: string;
                                                                               tags: string[];
                                                                                 };
-                                                                                }
+                                                                                } // Updatte perbaikan error
                                                                                 
-}
+                                                                            
